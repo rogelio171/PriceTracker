@@ -14,8 +14,10 @@ repositories {
 }
 
 dependencies {
+	implementation 'com.typesafe.akka:akka-actor-typed_2.13:2.6.12'
 	implementation 'io.reactivex.rxjava3:rxjava:3.0.4'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	testImplementation 'com.typesafe.akka:akka-actor-testkit-typed_2.13:2.6.12'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
 }

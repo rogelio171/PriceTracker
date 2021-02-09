@@ -1,34 +1,32 @@
 package com.roger.PriceTracker.cmd;
 
-import com.roger.PriceTracker.observer.ConsolePrintObserver;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import com.roger.PriceTracker.actors.Poller;
+import com.roger.PriceTracker.actors.PriceRequestor;
+import com.roger.PriceTracker.actors.Printer;
 import com.roger.PriceTracker.service.CoinBaseService;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
+import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.TimeUnit;
-
 @Component
+@AllArgsConstructor
 public class CmdLineUI implements CommandLineRunner {
     private final CoinBaseService coinBaseService;
 
-    public CmdLineUI(CoinBaseService coinBaseService) {
-        this.coinBaseService = coinBaseService;
-    }
-
-
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("\nCrypto Price: ");
+        System.out.println("\n\n...::: Coinbase Price Tracker :::...\n\n");
 
-        Observable.interval(3000, TimeUnit.MILLISECONDS, Schedulers.io())
-                .map(tick ->coinBaseService.getPrice("BTC-USD"))
-                .subscribe(new ConsolePrintObserver());
+        final ActorSystem system = ActorSystem.create("AkkaPriceTracker");
+        final ActorRef printerActor = system.actorOf(Printer.props(), "printerActor");
+        final ActorRef priceRequestor = system.actorOf(
+                PriceRequestor.props(printerActor, coinBaseService), "priceRequestor");
+        final ActorRef poller = system.actorOf(
+                Poller.props("BTC-USD", priceRequestor), "poller");
 
-        Observable.interval(3000, TimeUnit.MILLISECONDS, Schedulers.io())
-                .map(tick ->coinBaseService.getPrice("ETH-USD"))
-                .subscribe(new ConsolePrintObserver());
-
+        final ActorRef ethPoller = system.actorOf(
+                Poller.props("ETH-USD", priceRequestor), "ethPoller");
     }
 }
